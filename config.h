@@ -100,7 +100,7 @@ float alpha = 0.5;
 //#include "/home/spring/.cache/wal/colors-wal-st.h"
 static const char *colorname[] = {
         /* 8 normal colors */
-        "black",
+        "red3",
         "red3",
         "green3",
         "yellow3",
@@ -132,10 +132,14 @@ static const char *colorname[] = {
  * Default colors (colorname index)
  * foreground, background, cursor, reverse cursor
  */
-unsigned int defaultfg = 258;
-unsigned int defaultbg = 259;
-unsigned int defaultcs = 256;
-static unsigned int defaultrcs = 257;
+unsigned int defaultfg = 257;
+unsigned int defaultbg = 256;
+unsigned int defaultcs = 258;
+static unsigned int defaultrcs = 258;
+//unsigned int defaultfg = 258;
+//unsigned int defaultbg = 259;
+//unsigned int defaultcs = 256;
+//static unsigned int defaultrcs = 257;
 
 /*
  * Default shape of cursor
