@@ -5,8 +5,15 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char *font = "Hack Nerd Font:pixelsize=14:antialias=true:autohint=true";
-static int borderpx = 1;
+static char *font = "Hack Nerd Font:pixelsize=16:antialias=true:autohint=true";
+static int borderpx = 2;
+
+/* How to align the content in the window when the size of the terminal
+ * doesn't perfectly match the size of the window. The values are percentages.
+ * 50 means center, 0 means flush left/top, 100 means flush right/bottom.
+ */
+static int anysize_halign = 50;
+static int anysize_valign = 50;
 
 /*
  * What program is execed by st depends of these precedence rules:
@@ -23,7 +30,8 @@ char *scroll = NULL;
 char *stty_args = "stty raw pass8 nl -echo -iexten -cstopb 38400";
 
 /* identification sequence returned in DA and DECID */
-char *vtiden = "\033[?6c";
+/* By default, use the same one as kitty. */
+char *vtiden = "\033[?62c";
 
 /* Kerning / character bounding-box multipliers */
 static float cwscale = 1.0;
@@ -91,55 +99,51 @@ char *termname = "st-256color";
  *
  *	stty tabs
  */
-unsigned int tabspaces = 4;
+unsigned int tabspaces = 8;
 
 /* bg opacity */
-float alpha = 0.5;
+float alpha = 0.8;
 
-/* Colors */
-//#include "/home/spring/.cache/wal/colors-wal-st.h"
+/* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
-        /* 8 normal colors */
-        "red3",
-        "red3",
-        "green3",
-        "yellow3",
-        "blue2",
-        "magenta3",
-        "cyan3",
-        "gray90",
+	/* 8 normal colors */
+	"black",
+	"red3",
+	"green3",
+	"yellow3",
+	"blue2",
+	"magenta3",
+	"cyan3",
+	"gray90",
 
-        /* 8 bright colors */
-        "gray50",
-        "red",
-        "green",
-        "yellow",
-        "#5c5cff",
-        "magenta",
-        "cyan",
-        "white",
+	/* 8 bright colors */
+	"gray50",
+	"red",
+	"green",
+	"yellow",
+	"#5c5cff",
+	"magenta",
+	"cyan",
+	"white",
 
-        [255] = 0,
+	[255] = 0,
 
-        /* more colors can be added after 255 to use with DefaultXX */
-        "#cccccc",
-        "#555555",
-        "gray90", /* default foreground colour */
-        "black", /* default background colour */
+	/* more colors can be added after 255 to use with DefaultXX */
+	"#cccccc",
+	"#555555",
+	"gray90", /* default foreground colour */
+	"black", /* default background colour */
 };
+
 
 /*
  * Default colors (colorname index)
  * foreground, background, cursor, reverse cursor
  */
-unsigned int defaultfg = 257;
-unsigned int defaultbg = 256;
-unsigned int defaultcs = 258;
-static unsigned int defaultrcs = 258;
-//unsigned int defaultfg = 258;
-//unsigned int defaultbg = 259;
-//unsigned int defaultcs = 256;
-//static unsigned int defaultrcs = 257;
+unsigned int defaultfg = 258;
+unsigned int defaultbg = 259;
+unsigned int defaultcs = 256;
+static unsigned int defaultrcs = 257;
 
 /*
  * Default shape of cursor
@@ -148,7 +152,7 @@ static unsigned int defaultrcs = 258;
  * 6: Bar ("|")
  * 7: Snowman ("☃")
  */
-static unsigned int cursorshape = 4;
+static unsigned int cursorshape = 2;
 
 /*
  * Default columns and rows numbers
@@ -171,47 +175,37 @@ static unsigned int mousebg = 0;
 static unsigned int defaultattr = 11;
 
 /*
+ * Graphics configuration
+ */
+
+/// The template for the cache directory.
+const char graphics_cache_dir_template[] = "/tmp/st-images-XXXXXX";
+/// The max size of a single image file, in bytes.
+unsigned graphics_max_single_image_file_size = 20 * 1024 * 1024;
+/// The max size of the cache, in bytes.
+unsigned graphics_total_file_cache_size = 300 * 1024 * 1024;
+/// The max ram size of an image or placement, in bytes.
+unsigned graphics_max_single_image_ram_size = 100 * 1024 * 1024;
+/// The max total size of all images loaded into RAM.
+unsigned graphics_max_total_ram_size = 300 * 1024 * 1024;
+/// The max total number of image placements and images.
+unsigned graphics_max_total_placements = 4096;
+/// The ratio by which limits can be exceeded. This is to reduce the frequency
+/// of image removal.
+double graphics_excess_tolerance_ratio = 0.05;
+/// The minimum delay between redraws caused by animations, in milliseconds.
+unsigned graphics_animation_min_delay = 20;
+
+/*
  * Force mouse select/shortcuts while mask is active (when MODE_MOUSE is set).
  * Note that if you want to use ShiftMask with selmasks, set this to an other
  * modifier, set to 0 to not use it.
  */
 static uint forcemousemod = ShiftMask;
 
-/*
- * Xresources preferences to load at startup
- */
-ResourcePref resources[] = {
-		{ "font",         STRING,  &font },
-		{ "color0",       STRING,  &colorname[0] },
-		{ "color1",       STRING,  &colorname[1] },
-		{ "color2",       STRING,  &colorname[2] },
-		{ "color3",       STRING,  &colorname[3] },
-		{ "color4",       STRING,  &colorname[4] },
-		{ "color5",       STRING,  &colorname[5] },
-		{ "color6",       STRING,  &colorname[6] },
-		{ "color7",       STRING,  &colorname[7] },
-		{ "color8",       STRING,  &colorname[8] },
-		{ "color9",       STRING,  &colorname[9] },
-		{ "color10",      STRING,  &colorname[10] },
-		{ "color11",      STRING,  &colorname[11] },
-		{ "color12",      STRING,  &colorname[12] },
-		{ "color13",      STRING,  &colorname[13] },
-		{ "color14",      STRING,  &colorname[14] },
-		{ "color15",      STRING,  &colorname[15] },
-		{ "background",   STRING,  &colorname[256] },
-		{ "foreground",   STRING,  &colorname[257] },
-		{ "cursorColor",  STRING,  &colorname[258] },
-		{ "termname",     STRING,  &termname },
-		{ "shell",        STRING,  &shell },
-		{ "minlatency",   INTEGER, &minlatency },
-		{ "maxlatency",   INTEGER, &maxlatency },
-		{ "blinktimeout", INTEGER, &blinktimeout },
-		{ "bellvolume",   INTEGER, &bellvolume },
-		{ "tabspaces",    INTEGER, &tabspaces },
-		{ "borderpx",     INTEGER, &borderpx },
-		{ "cwscale",      FLOAT,   &cwscale },
-		{ "chscale",      FLOAT,   &chscale },
-};
+/* Internal keyboard shortcuts. */
+#define MODKEY Mod1Mask
+#define TERMMOD (ControlMask|ShiftMask)
 
 /*
  * Internal mouse shortcuts.
@@ -219,16 +213,14 @@ ResourcePref resources[] = {
  */
 static MouseShortcut mshortcuts[] = {
 	/* mask                 button   function        argument       release */
+	{ TERMMOD,              Button3, previewimage,   {.s = "feh"} },
+	{ TERMMOD,              Button2, showimageinfo,  {},            1 },
 	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
 	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
 	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
 	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"} },
 	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"} },
 };
-
-/* Internal keyboard shortcuts. */
-#define MODKEY Mod1Mask
-#define TERMMOD (ControlMask|ShiftMask)
 
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
@@ -244,6 +236,10 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_Y,           selpaste,       {.i =  0} },
 	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
 	{ TERMMOD,              XK_Num_Lock,    numlock,        {.i =  0} },
+	{ TERMMOD,              XK_F1,          togglegrdebug,  {.i =  0} },
+	{ TERMMOD,              XK_F6,          dumpgrstate,    {.i =  0} },
+	{ TERMMOD,              XK_F7,          unloadimages,   {.i =  0} },
+	{ TERMMOD,              XK_F8,          toggleimages,   {.i =  0} },
 };
 
 /*
